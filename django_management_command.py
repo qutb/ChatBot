@@ -10,6 +10,16 @@ class Command(BaseCommand):
         FAQ.objects.all().delete()
         QuickReply.objects.all().delete()
 
+        # Define CATEGORIES as they are in the model
+        CATEGORIES = [
+            ('login', 'Login & Authentication'),
+            ('password', 'Password Management'),
+            ('account', 'Account Details'),
+            ('signup', 'Sign Up Process'),
+            ('security', 'Security'),
+            ('general', 'General')
+        ]
+
         # Login & Authentication FAQs
         login_faqs = [
             {
@@ -160,7 +170,7 @@ class Command(BaseCommand):
             ('general', '🔑 Password Issues', 'password_reset', 2),
             ('general', '👤 Account Questions', 'account_details', 3),
             ('general', '🛡️ Security Settings', 'security', 4),
-            ('general', '🙋 Speak to Human', 'escalate', 5),
+            ('general', '🙋 Call Helpline', 'escalate', 5),
         ]
 
         reply_count = 0
@@ -181,7 +191,7 @@ class Command(BaseCommand):
 
         # Display summary
         self.stdout.write('\nFAQs by category:')
-        for category, _ in FAQ.CATEGORIES:
+        for category, _ in CATEGORIES:
             count = FAQ.objects.filter(category=category).count()
             self.stdout.write(f'  {category}: {count} FAQs')
 
