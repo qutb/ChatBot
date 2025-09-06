@@ -88,10 +88,10 @@ class ChatbotEngine:
             'greeting': {
                 'message': "Hello! I'm here to help you with any questions about login, passwords, account details, and more. What can I assist you with today?",
                 'quick_replies': [
-                    {'title': '🔐 Login Issues', 'payload': 'login_help'},
-                    {'title': '🔑 Password Reset', 'payload': 'password_reset'},
-                    {'title': '👤 Account Details', 'payload': 'account_details'},
-                    {'title': '📝 Sign Up Help', 'payload': 'signup_help'}
+                    {'title': 'Login Issues', 'payload': 'login_help'},
+                    {'title': 'Password Reset', 'payload': 'password_reset'},
+                    {'title': 'Account Details', 'payload': 'account_details'},
+                    {'title': 'Sign Up Help', 'payload': 'signup_help'}
                 ]
             },
             'goodbye': {
@@ -114,7 +114,7 @@ class ChatbotEngine:
             
             'invalid_credentials': "For invalid credential errors:\n\n✅ Check your username/email spelling\n✅ Ensure Caps Lock is off\n✅ Try copying and pasting your password\n✅ Clear browser cache and cookies\n\nStill having trouble? Let me know!",
             
-            '2fa_issues': "Two-Factor Authentication troubleshooting:\n\n📱 **App Issues:**\n• Sync your device time\n• Try backup codes\n• Reinstall authenticator app\n\n📞 **SMS Issues:**\n• Check signal strength\n• Try calling instead of SMS\n• Update phone number",
+            '2fa_issues': "Two-Factor Authentication troubleshooting:\n\n **App Issues:**\n• Sync your device time\n• Try backup codes\n• Reinstall authenticator app\n\n📞 **SMS Issues:**\n• Check signal strength\n• Try calling instead of SMS\n• Update phone number",
             
             'no_reset_email': "If you're not receiving the reset email:\n\n1. Check your spam/junk folder\n2. Wait 5-10 minutes (emails can be delayed)\n3. Ensure you entered the correct email\n4. Try a different email if you have multiple accounts\n5. Add noreply@company.com to your contacts",
             
