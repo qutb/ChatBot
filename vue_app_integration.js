@@ -7,12 +7,13 @@ import axios from 'axios'
 axios.defaults.baseURL = 'http://localhost:8000'  // Your Django server URL
 axios.defaults.timeout = 10000
 axios.defaults.headers.common['Content-Type'] = 'application/json'
+axios.defaults.withCredentials = true  // Important for CSRF cookies
 
-// Add request interceptor for CSRF token if needed
+// Add request interceptor for CSRF token
 axios.interceptors.request.use(config => {
-  const token = document.querySelector('[name=csrfmiddlewaretoken]')
-  if (token) {
-    config.headers['X-CSRFToken'] = token.value
+  const csrfToken = getCookie('csrftoken')
+  if (csrfToken) {
+    config.headers['X-CSRFToken'] = csrfToken
   }
   return config
 })
@@ -23,10 +24,28 @@ axios.interceptors.response.use(
   error => {
     if (error.response?.status === 403) {
       console.error('CSRF token missing or invalid')
+    } else if (error.response?.status === 500) {
+      console.error('Server error occurred')
     }
     return Promise.reject(error)
   }
 )
+
+// Helper function to get cookie
+function getCookie(name) {
+  let cookieValue = null
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';')
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim()
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+        break
+      }
+    }
+  }
+  return cookieValue
+}
 
 const app = createApp(App)
 app.config.globalProperties.$http = axios
