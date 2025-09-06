@@ -1,0 +1,361 @@
+<template>
+  <div class="chatbot-container" :class="{ 'chatbot-minimized': isMinimized }">
+    <!-- Minimized Chat Button -->
+    <div 
+      v-if="isMinimized" 
+      class="chat-trigger"
+      @click="toggleChat"
+      :class="{ 'has-unread': unreadCount > 0 }"
+    >
+      <div class="chat-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+        </svg>
+      </div>
+      <div v-if="unreadCount > 0" class="unread-badge">{{ unreadCount }}</div>
+      <div class="chat-pulse"></div>
+    </div>
+
+    <!-- Full Chat Interface -->
+    <div v-else class="chat-interface">
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="header-content">
+          <div class="bot-avatar">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7A4,4 0 0,1 17,11H18A1,1 0 0,1 19,12V16A1,1 0 0,1 18,17H17A4,4 0 0,1 13,21H11A4,4 0 0,1 7,17H6A1,1 0 0,1 5,16V12A1,1 0 0,1 6,11H7A4,4 0 0,1 11,7V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M12,4A0.5,0.5 0 0,0 11.5,4.5A0.5,0.5 0 0,0 12,5A0.5,0.5 0 0,0 12.5,4.5A0.5,0.5 0 0,0 12,4M12,9A2,2 0 0,0 10,11V16A2,2 0 0,0 12,18A2,2 0 0,0 14,16V11A2,2 0 0,0 12,9Z"/>
+            </svg>
+          </div>
+          <div class="header-info">
+            <h3>Support Assistant</h3>
+            <span class="status" :class="{ 'online': isOnline }">
+              <div class="status-dot"></div>
+              {{ isOnline ? 'Online' : 'Offline' }}
+            </span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button @click="toggleChat" class="minimize-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19,13H5V11H19V13Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages Container -->
+      <div class="chat-messages" ref="messagesContainer">
+        <div class="messages-list">
+          <TransitionGroup name="message" tag="div">
+            <div 
+              v-for="message in messages" 
+              :key="message.id"
+              :class="['message', `message-${message.type}`]"
+            >
+              <div class="message-avatar" v-if="message.type === 'bot'">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7A4,4 0 0,1 17,11H18A1,1 0 0,1 19,12V16A1,1 0 0,1 18,17H17A4,4 0 0,1 13,21H11A4,4 0 0,1 7,17H6A1,1 0 0,1 5,16V12A1,1 0 0,1 6,11H7A4,4 0 0,1 11,7V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M12,4A0.5,0.5 0 0,0 11.5,4.5A0.5,0.5 0 0,0 12,5A0.5,0.5 0 0,0 12.5,4.5A0.5,0.5 0 0,0 12,4M12,9A2,2 0 0,0 10,11V16A2,2 0 0,0 12,18A2,2 0 0,0 14,16V11A2,2 0 0,0 12,9Z"/>
+                </svg>
+              </div>
+              
+              <div class="message-content">
+                <div class="message-bubble">
+                  <div v-html="formatMessage(message.content)"></div>
+                  <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+                </div>
+                
+                <!-- Quick Replies -->
+                <div v-if="message.metadata?.quick_replies?.length" class="quick-replies">
+                  <button 
+                    v-for="reply in message.metadata.quick_replies"
+                    :key="reply.payload"
+                    @click="handleQuickReply(reply)"
+                    class="quick-reply-btn"
+                  >
+                    {{ reply.title }}
+                  </button>
+                </div>
+
+                <!-- Feedback Buttons -->
+                <div v-if="message.type === 'bot' && message.metadata?.type === 'faq_response'" class="message-feedback">
+                  <button @click="submitFeedback(message.id, 'helpful')" class="feedback-btn helpful">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M23,10C23,8.89 22.1,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10.08L23,10M1,21H5V9H1V21Z"/>
+                    </svg>
+                    Helpful
+                  </button>
+                  <button @click="submitFeedback(message.id, 'not_helpful')" class="feedback-btn not-helpful">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19,15H23V3H19V15M15,3H6C5.17,3 4.46,3.5 4.16,4.22L1.14,11.27C1.05,11.5 1,11.74 1,12V14A2,2 0 0,0 3,16H9.31L8.36,20.57C8.34,20.67 8.33,20.78 8.33,20.89C8.33,21.3 8.5,21.68 8.77,21.95L9.83,23L16.41,16.42C16.78,16.05 17,15.55 17,15V5A2,2 0 0,0 15,3Z"/>
+                    </svg>
+                    Not Helpful
+                  </button>
+                </div>
+              </div>
+            </div>
+          </TransitionGroup>
+
+          <!-- Typing Indicator -->
+          <div v-if="isTyping" class="message message-bot typing-indicator">
+            <div class="message-avatar">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7A4,4 0 0,1 17,11H18A1,1 0 0,1 19,12V16A1,1 0 0,1 18,17H17A4,4 0 0,1 13,21H11A4,4 0 0,1 7,17H6A1,1 0 0,1 5,16V12A1,1 0 0,1 6,11H7A4,4 0 0,1 11,7V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M12,4A0.5,0.5 0 0,0 11.5,4.5A0.5,0.5 0 0,0 12,5A0.5,0.5 0 0,0 12.5,4.5A0.5,0.5 0 0,0 12,4M12,9A2,2 0 0,0 10,11V16A2,2 0 0,0 12,18A2,2 0 0,0 14,16V11A2,2 0 0,0 12,9Z"/>
+              </svg>
+            </div>
+            <div class="message-content">
+              <div class="message-bubble">
+                <div class="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input-container">
+        <div class="input-wrapper">
+          <textarea
+            ref="messageInput"
+            v-model="currentMessage"
+            @keydown="handleKeydown"
+            @input="handleInput"
+            placeholder="Type your message..."
+            rows="1"
+            class="message-input"
+            :disabled="isLoading"
+          ></textarea>
+          <button 
+            @click="sendMessage"
+            :disabled="!currentMessage.trim() || isLoading"
+            class="send-button"
+          >
+            <svg v-if="!isLoading" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+            </svg>
+            <div v-else class="loading-spinner"></div>
+          </button>
+        </div>
+        
+        <!-- Suggested Actions -->
+        <div v-if="suggestedActions.length && !currentMessage" class="suggested-actions">
+          <button 
+            v-for="action in suggestedActions"
+            :key="action.payload"
+            @click="handleQuickReply(action)"
+            class="suggested-action"
+          >
+            {{ action.title }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from 'axios'
+
+export default {
+  name: 'ChatBot',
+  data() {
+    return {
+      isMinimized: true,
+      isOnline: true,
+      isTyping: false,
+      isLoading: false,
+      sessionId: null,
+      messages: [],
+      currentMessage: '',
+      unreadCount: 0,
+      suggestedActions: [
+        { title: '🔐 Login Help', payload: 'login_help' },
+        { title: '🔑 Password Reset', payload: 'password_reset' },
+        { title: '👤 Account Info', payload: 'account_details' }
+      ]
+    }
+  },
+  methods: {
+    async toggleChat() {
+      this.isMinimized = !this.isMinimized
+      
+      if (!this.isMinimized) {
+        this.unreadCount = 0
+        if (!this.sessionId) {
+          await this.startSession()
+        }
+        this.$nextTick(() => {
+          this.scrollToBottom()
+          this.$refs.messageInput?.focus()
+        })
+      }
+    },
+
+    async startSession() {
+      try {
+        const response = await axios.post('/chatbot/api/chat/', {
+          action: 'start_session'
+        })
+        
+        this.sessionId = response.data.session_id
+        this.messages.push(response.data.message)
+        this.scrollToBottom()
+      } catch (error) {
+        console.error('Error starting session:', error)
+        this.handleError()
+      }
+    },
+
+    async sendMessage() {
+      if (!this.currentMessage.trim() || this.isLoading) return
+
+      const messageText = this.currentMessage.trim()
+      this.currentMessage = ''
+      this.isLoading = true
+      this.isTyping = true
+
+      // Auto-resize textarea
+      this.$refs.messageInput.style.height = 'auto'
+
+      try {
+        // Simulate typing delay
+        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000))
+        
+        const response = await axios.post('/chatbot/api/chat/', {
+          action: 'send_message',
+          session_id: this.sessionId,
+          content: messageText
+        })
+
+        this.messages.push(response.data.user_message)
+        this.isTyping = false
+        
+        // Slight delay before showing bot response
+        setTimeout(() => {
+          this.messages.push(response.data.bot_message)
+          this.scrollToBottom()
+        }, 300)
+
+      } catch (error) {
+        console.error('Error sending message:', error)
+        this.handleError()
+      } finally {
+        this.isLoading = false
+        this.isTyping = false
+        this.scrollToBottom()
+      }
+    },
+
+    async handleQuickReply(reply) {
+      this.currentMessage = reply.title
+      await this.sendMessage()
+    },
+
+    async submitFeedback(messageId, type) {
+      try {
+        await axios.post('/chatbot/api/chat/', {
+          action: 'submit_feedback',
+          session_id: this.sessionId,
+          message_id: messageId,
+          rating: type === 'helpful' ? 5 : 2,
+          comment: type === 'helpful' ? 'Helpful response' : 'Not helpful'
+        })
+        
+        // Show feedback acknowledgment
+        this.showToast(type === 'helpful' ? 'Thanks for your feedback! 👍' : 'Thanks! We\'ll improve our responses. 🔧')
+      } catch (error) {
+        console.error('Error submitting feedback:', error)
+      }
+    },
+
+    handleKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault()
+        this.sendMessage()
+      }
+    },
+
+    handleInput() {
+      // Auto-resize textarea
+      const textarea = this.$refs.messageInput
+      textarea.style.height = 'auto'
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+    },
+
+    formatMessage(content) {
+      return content
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+    },
+
+    formatTime(timestamp) {
+      const date = new Date(timestamp)
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      })
+    },
+
+    scrollToBottom() {
+      this.$nextTick(() => {
+        const container = this.$refs.messagesContainer
+        if (container) {
+          container.scrollTop = container.scrollHeight
+        }
+      })
+    },
+
+    handleError() {
+      this.messages.push({
+        id: Date.now().toString(),
+        type: 'bot',
+        content: 'Sorry, I\'m experiencing technical difficulties. Please try again in a moment or contact support if the issue persists.',
+        timestamp: new Date().toISOString(),
+        metadata: {
+          quick_replies: [
+            { title: 'Try Again', payload: 'retry' },
+            { title: 'Contact Support', payload: 'escalate' }
+          ]
+        }
+      })
+      this.isTyping = false
+      this.isLoading = false
+    },
+
+    showToast(message) {
+      // Simple toast notification
+      const toast = document.createElement('div')
+      toast.className = 'chat-toast'
+      toast.textContent = message
+      document.body.appendChild(toast)
+      
+      setTimeout(() => {
+        toast.classList.add('show')
+      }, 100)
+      
+      setTimeout(() => {
+        toast.classList.remove('show')
+        setTimeout(() => {
+          document.body.removeChild(toast)
+        }, 300)
+      }, 3000)
+    }
+  },
+
+  mounted() {
+    // Optional: Auto-open chat for new users
+    setTimeout(() => {
+      if (this.isMinimized && !localStorage.getItem('chat_visited')) {
+        this.unreadCount = 1
+        localStorage.setItem('chat_visited', 'true')
+      }
+    }, 3000)
+  }
+}
+</script>
