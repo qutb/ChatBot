@@ -8,8 +8,7 @@ ChatBot in Django and Vue.js
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
-- PostgreSQL or SQLite
-- Git
+- PostgreSQL 
 
 ### 1. Django Backend Setup
 
