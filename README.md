@@ -109,7 +109,7 @@ npm run dev
 ##  Features Overview
 
 ### Core Features
-✅ **AI-Powered Responses** - Intelligent intent detection and contextual replies
+-> **AI-Powered Responses** - Intelligent intent detection and contextual replies
 ✅ **Real-time Chat** - Smooth, responsive messaging interface
 ✅ **Quick Replies** - Predefined buttons for common questions
 ✅ **Typing Indicators** - Visual feedback during bot responses
