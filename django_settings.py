@@ -29,8 +29,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'chatbot_db',
-        'USER': 'your_db_user',
-        'PASSWORD': 'your_db_password',
+        'USER': 'bakwas',
+        'PASSWORD': 'kuchbhii',
         'HOST': 'localhost',
         'PORT': '5432',
     }
