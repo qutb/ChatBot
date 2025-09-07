@@ -170,7 +170,7 @@ class Command(BaseCommand):
             ('general', '🔑 Password Issues', 'password_reset', 2),
             ('general', '👤 Account Questions', 'account_details', 3),
             ('general', '🛡️ Security Settings', 'security', 4),
-            ('general', '🙋 Call Helpline', 'escalate', 5),
+            ('general', '🙋 Speak to Human', 'escalate', 5),
         ]
 
         reply_count = 0
