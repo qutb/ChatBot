@@ -31,10 +31,6 @@ class ChatbotView(View):
                 return self.start_session(request, data)
             elif action == 'send_message':
                 return self.send_message(request, data)
-            elif action == 'get_messages':
-                return self.get_messages(request, data)
-            elif action == 'typing_indicator':
-                return self.typing_indicator(request, data)
             elif action == 'submit_feedback':
                 return self.submit_feedback(request, data)
             else:
@@ -138,37 +134,6 @@ class ChatbotView(View):
                 'metadata': bot_message.metadata
             }
         })
-
-    def get_messages(self, request, data):
-        session_id = data.get('session_id')
-        page = data.get('page', 1)
-        
-        session = get_object_or_404(ChatSession, session_id=session_id)
-        messages = Message.objects.filter(session=session)
-        
-        paginator = Paginator(messages, 50)
-        page_obj = paginator.get_page(page)
-        
-        messages_data = []
-        for message in page_obj:
-            messages_data.append({
-                'id': str(message.id),
-                'content': message.content,
-                'timestamp': message.timestamp.isoformat(),
-                'type': message.message_type,
-                'metadata': message.metadata
-            })
-        
-        return JsonResponse({
-            'messages': messages_data,
-            'has_next': page_obj.has_next(),
-            'has_previous': page_obj.has_previous(),
-            'total_pages': paginator.num_pages
-        })
-
-    def typing_indicator(self, request, data):
-        # In a real implementation, you'd use WebSockets for real-time updates
-        return JsonResponse({'status': 'received'})
 
     def submit_feedback(self, request, data):
         session_id = data.get('session_id')
