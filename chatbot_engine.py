@@ -8,7 +8,7 @@ from .models import FAQ, QuickReply, ChatAnalytics
 class ChatbotEngine:
     def __init__(self):
         # =====================================================
-        # ADD YOUR NEW INTENTS HERE
+        # PROWELL CHAT BOT ENGINE
         # =====================================================
         self.intents = {
             'login_help': {
