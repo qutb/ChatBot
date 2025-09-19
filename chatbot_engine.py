@@ -46,7 +46,7 @@ class ChatbotEngine:
         }
         
         # =====================================================
-        # ADD YOUR BOT RESPONSES HERE
+        # BOT RESPONSES 
         # =====================================================
         self.responses = {
             'login_help': {
@@ -114,7 +114,7 @@ class ChatbotEngine:
         }
 
         # =====================================================
-        # ADD YOUR SPECIFIC RESPONSES HERE
+        # SPECIFIC RESPONSES 
         # =====================================================
         self.specific_responses = {
             'forgot_username': "To recover your username:\n\n1. Visit the login page\n2. Click 'Forgot Username?'\n3. Enter your email address\n4. Check your email for your username\n\nIf you don't receive it, contact support at support@company.com",
