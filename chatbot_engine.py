@@ -7,6 +7,9 @@ from .models import FAQ, QuickReply, ChatAnalytics
 
 class ChatbotEngine:
     def __init__(self):
+        # =====================================================
+        # ADD YOUR NEW INTENTS HERE
+        # =====================================================
         self.intents = {
             'login_help': {
                 'patterns': ['login', 'log in', 'sign in', 'signin', 'cant login', 'unable to login', 'login problem'],
@@ -42,6 +45,9 @@ class ChatbotEngine:
             }
         }
         
+        # =====================================================
+        # ADD YOUR BOT RESPONSES HERE
+        # =====================================================
         self.responses = {
             'login_help': {
                 'message': "I can help you with login issues! Here are the most common solutions:",
@@ -107,6 +113,9 @@ class ChatbotEngine:
             }
         }
 
+        # =====================================================
+        # ADD YOUR SPECIFIC RESPONSES HERE
+        # =====================================================
         self.specific_responses = {
             'forgot_username': "To recover your username:\n\n1. Visit the login page\n2. Click 'Forgot Username?'\n3. Enter your email address\n4. Check your email for your username\n\nIf you don't receive it, contact support at support@company.com",
             
@@ -118,7 +127,19 @@ class ChatbotEngine:
             
             'no_reset_email': "If you're not receiving the reset email:\n\n1. Check your spam/junk folder\n2. Wait 5-10 minutes (emails can be delayed)\n3. Ensure you entered the correct email\n4. Try a different email if you have multiple accounts\n5. Add noreply@company.com to your contacts",
             
-            'enable_2fa': "To enable Two-Factor Authentication:\n\n1. Go to Account Settings > Security\n2. Click 'Enable 2FA'\n3. Download an authenticator app (Google Authenticator, Authy)\n4. Scan the QR code\n5. Enter the verification code\n6. Save your backup codes securely\n\n🔒 This adds an extra layer of security to your account!"
+            'enable_2fa': "To enable Two-Factor Authentication:\n\n1. Go to Account Settings > Security\n2. Click 'Enable 2FA'\n3. Download an authenticator app (Google Authenticator, Authy)\n4. Scan the QR code\n5. Enter the verification code\n6. Save your backup codes securely\n\n🔒 This adds an extra layer of security to your account!",
+            
+            'password_requirements': "Password Requirements:\n\n• At least 8 characters long\n• One uppercase letter (A-Z)\n• One lowercase letter (a-z)\n• One number (0-9)\n• One special character (!@#$%^&*)\n\n💡 Tip: Use a passphrase like 'Coffee!Morning123'",
+            
+            'reset_link_expired': "If your reset link has expired:\n\n1. Request a new password reset\n2. Use the link within 24 hours\n3. Don't close the browser during reset\n4. Complete the process in one session\n\nNeed a new link? I can help you request one.",
+            
+            'change_email': "To change your email address:\n\n1. Log into your account\n2. Go to Account Settings\n3. Click 'Edit Email'\n4. Enter new email\n5. Verify via confirmation link\n\nNote: You'll need access to both email addresses.",
+            
+            'update_phone': "To update your phone number:\n\n1. Go to Account Settings\n2. Select 'Contact Information'\n3. Click 'Edit Phone'\n4. Enter new number\n5. Verify with SMS code\n\nThis helps with account recovery and 2FA.",
+            
+            'continue_bot': "Great! I'm here to help. What would you like assistance with?",
+            
+            'cancel_transfer': "Transfer cancelled. How can I help you today?"
         }
 
     def process_message(self, message, session):
@@ -206,39 +227,42 @@ class ChatbotEngine:
         return min(confidence, 1.0)
 
     def search_faqs(self, message):
-        # Simple keyword matching for FAQs
-        faqs = FAQ.objects.filter(is_active=True)
-        
-        best_faq = None
-        best_score = 0
-        
-        for faq in faqs:
-            score = 0
+        try:
+            # Simple keyword matching for FAQs
+            faqs = FAQ.objects.filter(is_active=True)
             
-            # Check question similarity
-            if any(word in faq.question.lower() for word in message.split()):
-                score += 2
+            best_faq = None
+            best_score = 0
             
-            # Check keywords
-            for keyword in faq.keywords:
-                if keyword.lower() in message:
-                    score += 1
+            for faq in faqs:
+                score = 0
+                
+                # Check question similarity
+                if any(word in faq.question.lower() for word in message.split()):
+                    score += 2
+                
+                # Check keywords
+                for keyword in faq.keywords:
+                    if keyword.lower() in message:
+                        score += 1
+                
+                if score > best_score:
+                    best_score = score
+                    best_faq = faq
             
-            if score > best_score:
-                best_score = score
-                best_faq = faq
-        
-        if best_faq and best_score >= 2:
-            # Increment view count
-            best_faq.view_count += 1
-            best_faq.save()
-            
-            return {
-                'id': str(best_faq.id),
-                'question': best_faq.question,
-                'answer': best_faq.answer,
-                'category': best_faq.category
-            }
+            if best_faq and best_score >= 2:
+                # Increment view count
+                best_faq.view_count += 1
+                best_faq.save()
+                
+                return {
+                    'id': str(best_faq.id),
+                    'question': best_faq.question,
+                    'answer': best_faq.answer,
+                    'category': best_faq.category
+                }
+        except Exception as e:
+            print(f"Error searching FAQs: {e}")
         
         return None
 
