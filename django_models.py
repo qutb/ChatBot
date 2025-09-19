@@ -16,6 +16,9 @@ class ChatSession(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+    def __str__(self):
+        return f"Session {self.session_id}"
+
 class Message(models.Model):
     MESSAGE_TYPES = [
         ('user', 'User'),
@@ -29,10 +32,13 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
-    metadata = models.JSONField(default=dict, blank=True)  # For storing quick replies, attachments, etc.
+    metadata = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.message_type} - {self.content[:50]}"
 
 class FAQ(models.Model):
     CATEGORIES = [
@@ -48,8 +54,8 @@ class FAQ(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORIES)
     question = models.CharField(max_length=500)
     answer = models.TextField()
-    keywords = models.JSONField(default=list)  # List of keywords for matching
-    priority = models.IntegerField(default=0)  # Higher priority shows first
+    keywords = models.JSONField(default=list)
+    priority = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     view_count = models.IntegerField(default=0)
     helpful_votes = models.IntegerField(default=0)
@@ -58,6 +64,11 @@ class FAQ(models.Model):
 
     class Meta:
         ordering = ['-priority', '-helpful_votes', 'question']
+        verbose_name = 'FAQ'
+        verbose_name_plural = 'FAQs'
+
+    def __str__(self):
+        return self.question
 
 class QuickReply(models.Model):
     title = models.CharField(max_length=100)
@@ -68,12 +79,22 @@ class QuickReply(models.Model):
 
     class Meta:
         ordering = ['order', 'title']
+        verbose_name_plural = 'Quick Replies'
+
+    def __str__(self):
+        return self.title
 
 class ChatAnalytics(models.Model):
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE)
-    event_type = models.CharField(max_length=50)  # 'message_sent', 'faq_viewed', 'escalated', etc.
+    event_type = models.CharField(max_length=50)
     event_data = models.JSONField(default=dict)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = 'Chat Analytics'
+
+    def __str__(self):
+        return f"{self.event_type} - {self.timestamp}"
 
 class UserFeedback(models.Model):
     RATING_CHOICES = [
@@ -89,3 +110,9 @@ class UserFeedback(models.Model):
     rating = models.IntegerField(choices=RATING_CHOICES)
     comment = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = 'User Feedback'
+
+    def __str__(self):
+        return f"Rating: {self.rating} - {self.timestamp}"
