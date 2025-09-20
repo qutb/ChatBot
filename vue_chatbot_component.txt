@@ -6,6 +6,7 @@
       class="chat-trigger"
       @click="toggleChat"
       :class="{ 'has-unread': unreadCount > 0 }"
+      title="Click to open chat support"
     >
       <div class="chat-icon">
         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -35,7 +36,7 @@
           </div>
         </div>
         <div class="header-actions">
-          <button @click="toggleChat" class="minimize-btn">
+          <button @click="toggleChat" class="minimize-btn" title="Minimize chat">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M19,13H5V11H19V13Z"/>
             </svg>
@@ -77,14 +78,22 @@
                 </div>
 
                 <!-- Feedback Buttons -->
-                <div v-if="message.type === 'bot' && message.metadata?.type === 'faq_response'" class="message-feedback">
-                  <button @click="submitFeedback(message.id, 'helpful')" class="feedback-btn helpful">
+                <div v-if="message.type === 'bot' && showFeedbackFor(message)" class="message-feedback">
+                  <button 
+                    @click="submitFeedback(message.id, 'helpful')" 
+                    class="feedback-btn helpful"
+                    :disabled="message.feedback_given"
+                  >
                     <svg viewBox="0 0 24 24" fill="currentColor">
                       <path d="M23,10C23,8.89 22.1,8 21,8H14.68L15.64,3.43C15.66,3.33 15.67,3.22 15.67,3.11C15.67,2.7 15.5,2.32 15.23,2.05L14.17,1L7.59,7.58C7.22,7.95 7,8.45 7,9V19A2,2 0 0,0 9,21H18C18.83,21 19.54,20.5 19.84,19.78L22.86,12.73C22.95,12.5 23,12.26 23,12V10.08L23,10M1,21H5V9H1V21Z"/>
                     </svg>
                     Helpful
                   </button>
-                  <button @click="submitFeedback(message.id, 'not_helpful')" class="feedback-btn not-helpful">
+                  <button 
+                    @click="submitFeedback(message.id, 'not_helpful')" 
+                    class="feedback-btn not-helpful"
+                    :disabled="message.feedback_given"
+                  >
                     <svg viewBox="0 0 24 24" fill="currentColor">
                       <path d="M19,15H23V3H19V15M15,3H6C5.17,3 4.46,3.5 4.16,4.22L1.14,11.27C1.05,11.5 1,11.74 1,12V14A2,2 0 0,0 3,16H9.31L8.36,20.57C8.34,20.67 8.33,20.78 8.33,20.89C8.33,21.3 8.5,21.68 8.77,21.95L9.83,23L16.41,16.42C16.78,16.05 17,15.55 17,15V5A2,2 0 0,0 15,3Z"/>
                     </svg>
@@ -99,7 +108,7 @@
           <div v-if="isTyping" class="message message-bot typing-indicator">
             <div class="message-avatar">
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7A4,4 极速赛车开奖直播 0 0,1 17,11H18A1,1 0 0,1 19,12V16A1,1 0 0,1 18,17H17A4,4 0 0,1 13,21H11A4,4 0 0,1 7,17H极速赛车开奖直播6A1,1 0 0,1 5,16V12A1,1 0 0,1 6,11H7A4,4 0 0,1 11,7V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M12,4A0.5,0.5 0 0,0 11.5,4.5A0.5,0.5 0 0,0 12,5A0.5,0.5 0 极速赛车开奖直播 0,0 12.5,4.5A0.5,0.5 0 0,极速赛车开奖直播0 12,4M12,9A2,2 0 0,0 10,11V16A2,2 0 0,0 12,18A2,2 0 0,0 14,16V11A2,2 0 0,0 12,9Z"/>
+                <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7A4,4 0 0,1 17,11H18A1,1 0 0,1 19,12V16A1,1 0 0,1 18,17H17A4,4 0 0,1 13,21H11A4,4 0 0,1 7,17H6A1,1 0 0,1 5,16V12A1,1 0 0,1 6,11H7A4,4 0 0,1 11,7V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M12,4A0.5,0.5 0 0,0 11.5,4.5A0.5,0.5 0 0,0 12,5A0.5,0.5 0 0,0 12.5,4.5A0.5,0.5 0 0,0 12,4M12,9A2,2 0 0,0 10,11V16A2,2 0 0,0 12,18A2,2 0 0,0 14,16V11A2,2 0 0,0 12,9Z"/>
               </svg>
             </div>
             <div class="message-content">
@@ -108,7 +117,7 @@
                   <span></span>
                   <span></span>
                   <span></span>
-                </极速赛车开奖直播div>
+                </div>
               </div>
             </div>
           </div>
@@ -127,11 +136,13 @@
             rows="1"
             class="message-input"
             :disabled="isLoading"
+            maxlength="1000"
           ></textarea>
           <button 
             @click="sendMessage"
-            :disabled="!currentMessage.trim() || isLoading"
+            :disabled="!canSendMessage"
             class="send-button"
+            title="Send message"
           >
             <svg v-if="!isLoading" viewBox="0 0 24 24" fill="currentColor">
               <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
@@ -151,138 +162,244 @@
             {{ action.title }}
           </button>
         </div>
+
+        <!-- Connection Status -->
+        <div v-if="!isOnline" class="connection-status">
+          <span class="status-indicator offline"></span>
+          Connection lost. Trying to reconnect...
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Messages -->
+    <div v-if="errorMessage" class="error-overlay">
+      <div class="error-content">
+        <h4>Connection Error</h4>
+        <p>{{ errorMessage }}</p>
+        <button @click="clearError" class="error-dismiss">Dismiss</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
-
 export default {
   name: 'ChatBot',
   data() {
     return {
+      // UI State
       isMinimized: true,
-      isOnline: true,
+      isOnline: navigator.onLine,
       isTyping: false,
       isLoading: false,
+      errorMessage: '',
+      
+      // Chat State
       sessionId: null,
       messages: [],
       currentMessage: '',
       unreadCount: 0,
+      
+      // Configuration
+      maxRetries: 3,
+      retryDelay: 1000,
+      apiUrl: '/chatbot/api/chat/',
+      
+      // Quick Actions
       suggestedActions: [
         { title: '🔐 Login Help', payload: 'login_help' },
         { title: '🔑 Password Reset', payload: 'password_reset' },
-        { title: '👤 Account Info', payload: 'account_details' }
+        { title: '👤 Account Info', payload: 'account_details' },
+        { title: '💳 Billing Help', payload: 'billing' }
       ]
     }
   },
+
+  computed: {
+    canSendMessage() {
+      return this.currentMessage.trim() && 
+             !this.isLoading && 
+             this.isOnline && 
+             this.sessionId;
+    }
+  },
+
   methods: {
     async toggleChat() {
-      this.isMinimized = !this.isMinimized
+      this.isMinimized = !this.isMinimized;
       
       if (!this.isMinimized) {
-        this.unreadCount = 0
+        this.unreadCount = 0;
         if (!this.sessionId) {
-          await this.startSession()
+          await this.startSession();
         }
         this.$nextTick(() => {
-          this.scrollToBottom()
-          this.$refs.messageInput?.focus()
-        })
+          this.scrollToBottom();
+          this.focusInput();
+        });
       }
     },
 
     async startSession() {
       try {
-        const response = await axios.post('/chatbot/api/chat/', {
+        this.isLoading = true;
+        this.clearError();
+
+        const response = await this.makeApiCall({
           action: 'start_session'
-        })
+        });
         
-        this.sessionId = response.data.session_id
-        this.messages.push(response.data.message)
-        this.scrollToBottom()
+        if (response.success) {
+          this.sessionId = response.session_id;
+          this.messages.push(response.message);
+          this.scrollToBottom();
+        } else {
+          throw new Error(response.error || 'Failed to start session');
+        }
       } catch (error) {
-        console.error('Error starting session:', error)
-        this.handleError()
+        this.handleError('Failed to start chat session. Please try again.', error);
+      } finally {
+        this.isLoading = false;
       }
     },
 
     async sendMessage() {
-      if (!this.currentMessage.trim() || this.isLoading) return
+      if (!this.canSendMessage) return;
 
-      const messageText = this.currentMessage.trim()
-      this.currentMessage = ''
-      this.isLoading = true
-      this.isTyping = true
+      const messageText = this.currentMessage.trim();
+      this.currentMessage = '';
+      this.isLoading = true;
+      this.isTyping = true;
 
-      // Auto-resize textarea
-      this.$refs.messageInput.style.height = 'auto'
+      // Reset textarea height
+      this.resetTextareaHeight();
 
       try {
-        // Simulate typing delay
-        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000))
+        // Simulate realistic typing delay
+        const typingDelay = 800 + Math.random() * 1200;
+        await this.delay(typingDelay);
         
-        const response = await axios.post('/chatbot/api/chat/', {
+        const response = await this.makeApiCall({
           action: 'send_message',
           session_id: this.sessionId,
           content: messageText
-        })
+        });
 
-        this.messages.push(response.data.user_message)
-        this.isTyping = false
-        
-        // Slight delay before showing bot response
-        setTimeout(() => {
-          this.messages.push(response.data.bot_message)
-          this.scrollToBottom()
-        }, 300)
+        if (response.success) {
+          // Add user message
+          this.messages.push(response.user_message);
+          this.isTyping = false;
+          
+          // Add bot response with slight delay
+          await this.delay(300);
+          this.messages.push(response.bot_message);
+          this.scrollToBottom();
+        } else {
+          throw new Error(response.error || 'Failed to send message');
+        }
 
       } catch (error) {
-        console.error('Error sending message:', error)
-        this.handleError()
+        this.handleError('Failed to send message. Please try again.', error);
+        // Restore user message if send failed
+        this.currentMessage = messageText;
       } finally {
-        this.isLoading = false
-        this.isTyping = false
-        this.scrollToBottom()
+        this.isLoading = false;
+        this.isTyping = false;
+        this.scrollToBottom();
       }
     },
 
     async handleQuickReply(reply) {
-      this.currentMessage = reply.title
-      await this.sendMessage()
+      // For payload-based replies, use the title as the message
+      this.currentMessage = reply.title;
+      await this.sendMessage();
     },
 
     async submitFeedback(messageId, type) {
       try {
-        await axios.post('/chatbot/api/chat/', {
+        const rating = type === 'helpful' ? 5 : 2;
+        
+        const response = await this.makeApiCall({
           action: 'submit_feedback',
           session_id: this.sessionId,
           message_id: messageId,
-          rating: type === 'helpful' ? 5 : 2,
+          rating: rating,
           comment: type === 'helpful' ? 'Helpful response' : 'Not helpful'
-        })
-        
-        // Show feedback acknowledgment
-        this.showToast(type === 'helpful' ? 'Thanks for your feedback! 👍' : 'Thanks! We\'ll improve our responses. 🔧')
+        });
+
+        if (response.success) {
+          // Mark message as feedback given
+          const message = this.messages.find(m => m.id === messageId);
+          if (message) {
+            this.$set(message, 'feedback_given', true);
+          }
+          
+          this.showToast(
+            type === 'helpful' 
+              ? 'Thanks for your feedback!' 
+              : 'Thanks! We\'ll work on improving our responses.'
+          );
+        }
       } catch (error) {
-        console.error('Error submitting feedback:', error)
+        console.error('Error submitting feedback:', error);
+        this.showToast('Unable to submit feedback right now.');
       }
     },
 
+    async makeApiCall(data, retries = 0) {
+      try {
+        const response = await fetch(this.apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': this.getCsrfToken()
+          },
+          body: JSON.stringify(data),
+          credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        if (retries < this.maxRetries && this.shouldRetry(error)) {
+          await this.delay(this.retryDelay * Math.pow(2, retries));
+          return this.makeApiCall(data, retries + 1);
+        }
+        throw error;
+      }
+    },
+
+    shouldRetry(error) {
+      // Retry on network errors or 5xx server errors
+      return !navigator.onLine || 
+             error.message.includes('fetch') ||
+             error.message.includes('50');
+    },
+
+    // Helper Methods
     handleKeydown(event) {
       if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault()
-        this.sendMessage()
+        event.preventDefault();
+        this.sendMessage();
       }
     },
 
     handleInput() {
-      // Auto-resize textarea
-      const textarea = this.$refs.messageInput
-      textarea.style.height = 'auto'
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+      const textarea = this.$refs.messageInput;
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      }
+    },
+
+    resetTextareaHeight() {
+      const textarea = this.$refs.messageInput;
+      if (textarea) {
+        textarea.style.height = 'auto';
+      }
     },
 
     formatMessage(content) {
@@ -290,28 +407,48 @@ export default {
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n/g, '<br>')
         .replace(/`(.*?)`/g, '<code>$1</code>')
-        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
     },
 
     formatTime(timestamp) {
-      const date = new Date(timestamp)
+      const date = new Date(timestamp);
       return date.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit',
         hour12: true 
-      })
+      });
+    },
+
+    showFeedbackFor(message) {
+      return message.metadata?.type === 'faq_response' || 
+             message.metadata?.type === 'intent_response';
     },
 
     scrollToBottom() {
       this.$nextTick(() => {
-        const container = this.$refs.messagesContainer
+        const container = this.$refs.messagesContainer;
         if (container) {
-          container.scrollTop = container.scrollHeight
+          container.scrollTop = container.scrollHeight;
         }
-      })
+      });
     },
 
-    handleError() {
+    focusInput() {
+      this.$nextTick(() => {
+        const input = this.$refs.messageInput;
+        if (input) {
+          input.focus();
+        }
+      });
+    },
+
+    handleError(message, error = null) {
+      console.error('Chatbot error:', error);
+      this.errorMessage = message;
+      this.isTyping = false;
+      this.isLoading = false;
+      
+      // Add error message to chat
       this.messages.push({
         id: Date.now().toString(),
         type: 'bot',
@@ -323,39 +460,754 @@ export default {
             { title: 'Contact Support', payload: 'escalate' }
           ]
         }
-      })
-      this.isTyping = false
-      this.isLoading = false
+      });
+    },
+
+    clearError() {
+      this.errorMessage = '';
     },
 
     showToast(message) {
-      // Simple toast notification
-      const toast = document.createElement('div')
-      toast.className = 'chat-toast'
-      toast.textContent = message
-      document.body.appendChild(toast)
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = 'chat-toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
       
+      // Animate in
       setTimeout(() => {
-        toast.classList.add('show')
-      }, 100)
+        toast.classList.add('show');
+      }, 100);
       
+      // Animate out and remove
       setTimeout(() => {
-        toast.classList.remove('show')
+        toast.classList.remove('show');
         setTimeout(() => {
-          document.body.removeChild(toast)
-        }, 300)
-      }, 3000)
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }, 3000);
+    },
+
+    getCsrfToken() {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+          return decodeURIComponent(value);
+        }
+      }
+      return '';
+    },
+
+    delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    },
+
+    handleOnlineStatus() {
+      this.isOnline = navigator.onLine;
+      if (!this.isOnline) {
+        this.showToast('Connection lost. Please check your internet connection.');
+      } else if (this.sessionId && !this.isOnline) {
+        this.showToast('Connection restored!');
+      }
+    },
+
+    // Keyboard accessibility
+    handleKeyboardNavigation(event) {
+      if (event.key === 'Escape' && !this.isMinimized) {
+        this.toggleChat();
+      }
     }
   },
 
   mounted() {
-    // Optional: Auto-open chat for new users
+    // Network status monitoring
+    window.addEventListener('online', this.handleOnlineStatus);
+    window.addEventListener('offline', this.handleOnlineStatus);
+    
+    // Keyboard accessibility
+    document.addEventListener('keydown', this.handleKeyboardNavigation);
+    
+    // Auto-open for first-time users
     setTimeout(() => {
-      if (this.isMinimized && !localStorage.getItem('chat_visited')) {
-        this.unreadCount = 1
-        localStorage.setItem('chat_visited', 'true')
+      if (this.isMinimized && !localStorage.getItem('chatbot_visited')) {
+        this.unreadCount = 1;
+        localStorage.setItem('chatbot_visited', 'true');
       }
-    }, 3000)
+    }, 3000);
+  },
+
+  beforeUnmount() {
+    // Cleanup event listeners
+    window.removeEventListener('online', this.handleOnlineStatus);
+    window.removeEventListener('offline', this.handleOnlineStatus);
+    document.removeEventListener('keydown', this.handleKeyboardNavigation);
   }
 }
 </script>
+
+<style scoped>
+/* Base Styles */
+.chatbot-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Minimized Chat Trigger */
+.chat-trigger {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: gentle-bounce 3s ease-in-out infinite;
+}
+
+.chat-trigger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+}
+
+.chat-trigger.has-unread {
+  animation: pulse-notification 2s ease-in-out infinite;
+}
+
+.chat-icon {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.unread-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ff4757;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  border: 2px solid white;
+}
+
+.chat-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid rgba(102, 126, 234, 0.6);
+  animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+/* Full Chat Interface */
+.chat-interface {
+  width: 380px;
+  height: 600px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Header */
+.chat-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bot-avatar {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bot-avatar svg {
+  width: 20px;
+  height: 20px;
+}
+
+.header-info h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2ecc71;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.status.online .status-dot {
+  background: #2ecc71;
+}
+
+.minimize-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.minimize-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.minimize-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Messages */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: linear-gradient(to bottom, #f8f9ff 0%, #ffffff 100%);
+}
+
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  display: flex;
+  gap: 12px;
+  opacity: 0;
+  animation: message-appear 0.4s ease-out forwards;
+}
+
+.message-user {
+  justify-content: flex-end;
+}
+
+.message-user .message-content {
+  order: -1;
+}
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
+}
+
+.message-avatar svg {
+  width: 16px;
+  height: 16px;
+}
+
+.message-content {
+  max-width: 280px;
+}
+
+.message-bubble {
+  background: white;
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+  position: relative;
+}
+
+.message-user .message-bubble {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.message-bubble::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+  top: 12px;
+}
+
+.message-bot .message-bubble::before {
+  left: -15px;
+  border-right-color: white;
+}
+
+.message-user .message-bubble::before {
+  right: -15px;
+  border-left-color: #667eea;
+}
+
+.message-time {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 4px;
+  text-align: right;
+}
+
+.message-user .message-time {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Quick Replies */
+.quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quick-reply-btn {
+  background: #f8f9ff;
+  border: 2px solid #667eea;
+  color: #667eea;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-reply-btn:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Feedback Buttons */
+.message-feedback {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.feedback-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #e0e0e0;
+  background: white;
+}
+
+.feedback-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feedback-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.feedback-btn.helpful {
+  color: #2ecc71;
+  border-color: #2ecc71;
+}
+
+.feedback-btn.helpful:hover:not(:disabled) {
+  background: #2ecc71;
+  color: white;
+}
+
+.feedback-btn.not-helpful {
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.feedback-btn.not-helpful:hover:not(:disabled) {
+  background: #e74c3c;
+  color: white;
+}
+
+.feedback-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Typing Indicator */
+.typing-indicator .message-bubble {
+  padding: 16px;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #667eea;
+  animation: typing-bounce 1.4s ease-in-out infinite both;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+/* Input Area */
+.chat-input-container {
+  padding: 20px;
+  background: white;
+  border-top: 1px solid #f0f0f0;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.message-input {
+  flex: 1;
+  border: 2px solid #f0f0f0;
+  border-radius: 20px;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+  min-height: 44px;
+  max-height: 120px;
+}
+
+.message-input:focus {
+  border-color: #667eea;
+}
+
+.message-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.send-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.send-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.send-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Suggested Actions */
+.suggested-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.suggested-action {
+  background: #f8f9ff;
+  border: 1px solid #e0e0e0;
+  color: #667eea;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.suggested-action:hover {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* Connection Status */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fff3cd;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #856404;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-indicator.offline {
+  background: #ffc107;
+  animation: pulse-warning 1s ease-in-out infinite;
+}
+
+/* Error Overlay */
+.error-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.error-content {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  text-align: center;
+}
+
+.error-content h4 {
+  margin: 0 0 12px 0;
+  color: #e74c3c;
+}
+
+.error-content p {
+  margin: 0 0 16px 0;
+  color: #666;
+}
+
+.error-dismiss {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+/* Toast Messages */
+:global(.chat-toast) {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  background: #333;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 1001;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+:global(.chat-toast.show) {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Animations */
+@keyframes gentle-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes pulse-notification {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes message-appear {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Transitions */
+.message-enter-active, .message-leave-active {
+  transition: all 0.3s ease;
+}
+
+.message-enter-from, .message-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .chat-interface {
+    width: calc(100vw - 40px);
+    height: calc(100vh - 40px);
+    max-height: 600px;
+  }
+  
+  .chatbot-container {
+    bottom: 10px;
+    right: 10px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .chat-interface {
+    background: #1e1e1e;
+    border-color: #333;
+  }
+  
+  .chat-messages {
+    background: linear-gradient(to bottom, #2a2a2a 0%, #1e1e1e 100%);
+  }
+  
+  .message-bubble {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #333;
+  }
+  
+  .message-bubble::before {
+    border-right-color: #2a2a2a;
+  }
+  
+  .message-input {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #333;
+  }
+  
+  .chat-input-container {
+    background: #1e1e1e;
+    border-color: #333;
+  }
+}
+
+/* Accessibility */
+.chat-trigger:focus,
+.minimize-btn:focus,
+.send-button:focus,
+.quick-reply-btn:focus,
+.feedback-btn:focus,
+.message-input:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .chat-trigger,
+  .send-button {
+    border: 2px solid currentColor;
+  }
+  
+  .message-bubble {
+    border-width: 2px;
+  }
+}
+</style>
