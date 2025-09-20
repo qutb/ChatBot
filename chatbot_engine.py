@@ -3,51 +3,55 @@ import re
 import json
 import random
 from datetime import datetime
-from .models import FAQ, QuickReply, ChatAnalytics
+from django.db import models
 
 class ChatbotEngine:
     def __init__(self):
-        # =====================================================
-        # PROWELL CHAT BOT ENGINE
-        # =====================================================
+        # Intent definitions with patterns and keywords
         self.intents = {
             'login_help': {
-                'patterns': ['login', 'log in', 'sign in', 'signin', 'cant login', 'unable to login', 'login problem'],
-                'keywords': ['login', 'signin', 'access', 'account', 'credentials']
+                'patterns': ['login', 'log in', 'sign in', 'signin', 'cant login', 'unable to login', 'login problem', 'access'],
+                'keywords': ['login', 'signin', 'access', 'account', 'credentials', 'username', 'authenticate']
             },
             'password_reset': {
-                'patterns': ['password', 'forgot password', 'reset password', 'change password', 'lost password'],
-                'keywords': ['password', 'reset', 'forgot', 'change', 'recover']
+                'patterns': ['password', 'forgot password', 'reset password', 'change password', 'lost password', 'recover password'],
+                'keywords': ['password', 'reset', 'forgot', 'change', 'recover', 'passphrase']
             },
             'account_details': {
-                'patterns': ['account', 'profile', 'update account', 'change email', 'personal information'],
-                'keywords': ['account', 'profile', 'email', 'phone', 'information', 'details']
+                'patterns': ['account', 'profile', 'update account', 'change email', 'personal information', 'my details'],
+                'keywords': ['account', 'profile', 'email', 'phone', 'information', 'details', 'update', 'modify']
             },
             'signup_help': {
-                'patterns': ['signup', 'sign up', 'register', 'create account', 'new account'],
-                'keywords': ['signup', 'register', 'create', 'new', 'account']
+                'patterns': ['signup', 'sign up', 'register', 'create account', 'new account', 'registration'],
+                'keywords': ['signup', 'register', 'create', 'new', 'account', 'join']
             },
             'security': {
-                'patterns': ['security', '2fa', 'two factor', 'secure', 'safety', 'protection'],
-                'keywords': ['security', 'safe', '2fa', 'authentication', 'protection']
+                'patterns': ['security', '2fa', 'two factor', 'secure', 'safety', 'protection', 'authentication'],
+                'keywords': ['security', 'safe', '2fa', 'authentication', 'protection', 'secure', 'verify']
+            },
+            'billing': {
+                'patterns': ['billing', 'payment', 'subscription', 'invoice', 'charge', 'refund', 'credit card'],
+                'keywords': ['billing', 'payment', 'invoice', 'subscription', 'charge', 'refund', 'card', 'money']
+            },
+            'technical': {
+                'patterns': ['bug', 'error', 'not working', 'broken', 'issue', 'problem', 'crash', 'slow'],
+                'keywords': ['bug', 'error', 'broken', 'issue', 'problem', 'crash', 'slow', 'technical']
             },
             'greeting': {
-                'patterns': ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'],
-                'keywords': ['hello', 'hi', 'hey', 'morning', 'afternoon', 'evening']
+                'patterns': ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings'],
+                'keywords': ['hello', 'hi', 'hey', 'morning', 'afternoon', 'evening', 'greetings']
             },
             'goodbye': {
-                'patterns': ['bye', 'goodbye', 'see you', 'thanks', 'thank you', 'thats all'],
-                'keywords': ['bye', 'goodbye', 'thanks', 'thank']
+                'patterns': ['bye', 'goodbye', 'see you', 'thanks', 'thank you', 'thats all', 'done'],
+                'keywords': ['bye', 'goodbye', 'thanks', 'thank', 'done', 'finish']
             },
             'escalate': {
-                'patterns': ['human', 'agent', 'representative', 'speak to someone', 'talk to human'],
-                'keywords': ['human', 'agent', 'representative', 'person', 'help']
+                'patterns': ['human', 'agent', 'representative', 'speak to someone', 'talk to human', 'support agent'],
+                'keywords': ['human', 'agent', 'representative', 'person', 'help', 'support']
             }
         }
         
-        # =====================================================
-        # BOT RESPONSES 
-        # =====================================================
+        # Bot responses for each intent
         self.responses = {
             'login_help': {
                 'message': "I can help you with login issues! Here are the most common solutions:",
@@ -91,6 +95,24 @@ class ChatbotEngine:
                     {'title': 'Suspicious Activity', 'payload': 'suspicious_activity'}
                 ]
             },
+            'billing': {
+                'message': "I can help you with billing and payment questions:",
+                'quick_replies': [
+                    {'title': 'View Invoice', 'payload': 'view_invoice'},
+                    {'title': 'Update Payment', 'payload': 'update_payment'},
+                    {'title': 'Refund Request', 'payload': 'refund_request'},
+                    {'title': 'Billing Issues', 'payload': 'billing_issues'}
+                ]
+            },
+            'technical': {
+                'message': "I'm here to help with technical issues. Let me know more details:",
+                'quick_replies': [
+                    {'title': 'Report Bug', 'payload': 'report_bug'},
+                    {'title': 'Performance Issues', 'payload': 'performance_issues'},
+                    {'title': 'Feature Not Working', 'payload': 'feature_not_working'},
+                    {'title': 'Browser Issues', 'payload': 'browser_issues'}
+                ]
+            },
             'greeting': {
                 'message': "Hello! I'm here to help you with any questions about login, passwords, account details, and more. What can I assist you with today?",
                 'quick_replies': [
@@ -101,7 +123,7 @@ class ChatbotEngine:
                 ]
             },
             'goodbye': {
-                'message': "Thank you for using our support chat! If you need more help, just start a new conversation. Have a great day! 😊",
+                'message': "Thank you for using our support chat! If you need more help, just start a new conversation. Have a great day!",
                 'quick_replies': []
             },
             'escalate': {
@@ -113,9 +135,7 @@ class ChatbotEngine:
             }
         }
 
-        # =====================================================
-        # SPECIFIC RESPONSES 
-        # =====================================================
+        # Specific responses for detailed help
         self.specific_responses = {
             'forgot_username': "To recover your username:\n\n1. Visit the login page\n2. Click 'Forgot Username?'\n3. Enter your email address\n4. Check your email for your username\n\nIf you don't receive it, contact support at support@company.com",
             
@@ -139,10 +159,17 @@ class ChatbotEngine:
             
             'continue_bot': "Great! I'm here to help. What would you like assistance with?",
             
-            'cancel_transfer': "Transfer cancelled. How can I help you today?"
+            'cancel_transfer': "Transfer cancelled. How can I help you today?",
+
+            'view_invoice': "To view your invoice:\n\n1. Go to Account Settings\n2. Click 'Billing & Payments'\n3. Select 'View Invoices'\n4. Download or print as needed\n\nNeed help finding a specific invoice?",
+
+            'report_bug': "To report a bug:\n\n1. Describe what you were doing\n2. What happened vs what you expected\n3. Include browser and device info\n4. Add screenshots if possible\n\nI'll forward this to our technical team.",
+
+            'browser_issues': "Common browser fixes:\n\n1. Clear cache and cookies\n2. Disable browser extensions\n3. Try incognito/private mode\n4. Update your browser\n5. Try a different browser\n\nWhich browser are you using?"
         }
 
     def process_message(self, message, session):
+        """Process user message and return appropriate response"""
         message_lower = message.lower().strip()
         
         # Check for specific payload responses first
@@ -154,11 +181,11 @@ class ChatbotEngine:
                 'metadata': {'type': 'specific_response'}
             }
         
-        # Detect intent
+        # Detect intent from user message
         intent = self.detect_intent(message_lower)
         confidence = self.calculate_confidence(message_lower, intent)
         
-        # Get response based on intent
+        # Get response based on detected intent
         if intent in self.responses:
             response_data = self.responses[intent]
             return {
@@ -189,25 +216,30 @@ class ChatbotEngine:
                 }
             }
         
-        # Default response
+        # Default response when nothing matches
         return self.get_default_response(message_lower)
 
     def detect_intent(self, message):
+        """Detect user intent from message using pattern matching"""
         best_intent = None
         best_score = 0
         
         for intent, data in self.intents.items():
             score = 0
             
-            # Check patterns
+            # Check exact pattern matches (higher weight)
             for pattern in data['patterns']:
                 if pattern in message:
-                    score += 2
+                    score += 3
             
-            # Check keywords
+            # Check keyword matches (lower weight)
             for keyword in data['keywords']:
                 if keyword in message:
                     score += 1
+            
+            # Bonus for multiple matches
+            if score > 2:
+                score += 1
             
             if score > best_score:
                 best_score = score
@@ -216,6 +248,7 @@ class ChatbotEngine:
         return best_intent if best_score > 0 else None
 
     def calculate_confidence(self, message, intent):
+        """Calculate confidence score for intent detection"""
         if not intent:
             return 0.0
         
@@ -223,34 +256,45 @@ class ChatbotEngine:
         matches = sum(1 for pattern in self.intents[intent]['patterns'] if pattern in message)
         keyword_matches = sum(1 for keyword in self.intents[intent]['keywords'] if keyword in message)
         
-        confidence = (matches * 0.4 + keyword_matches * 0.2) / max(word_count * 0.1, 1)
-        return min(confidence, 1.0)
+        # Calculate confidence based on matches and message length
+        total_matches = matches * 2 + keyword_matches
+        confidence = min(total_matches / max(word_count * 0.5, 1), 1.0)
+        
+        return round(confidence, 2)
 
     def search_faqs(self, message):
+        """Search FAQs for relevant answers"""
         try:
-            # Simple keyword matching for FAQs
-            faqs = FAQ.objects.filter(is_active=True)
+            # Import here to avoid circular imports
+            from .models import FAQ
+            
+            faqs = FAQ.objects.filter(is_active=True).order_by('-priority', '-helpful_votes')
             
             best_faq = None
             best_score = 0
             
             for faq in faqs:
                 score = 0
+                message_words = message.split()
                 
                 # Check question similarity
-                if any(word in faq.question.lower() for word in message.split()):
-                    score += 2
+                question_words = faq.question.lower().split()
+                common_words = set(message_words) & set(question_words)
+                score += len(common_words) * 2
                 
-                # Check keywords
+                # Check keyword matches
                 for keyword in faq.keywords:
                     if keyword.lower() in message:
-                        score += 1
+                        score += 2
                 
-                if score > best_score:
+                # Bonus for high-priority FAQs
+                score += faq.priority * 0.5
+                
+                if score > best_score and score >= 2:  # Minimum threshold
                     best_score = score
                     best_faq = faq
             
-            if best_faq and best_score >= 2:
+            if best_faq:
                 # Increment view count
                 best_faq.view_count += 1
                 best_faq.save()
@@ -267,10 +311,12 @@ class ChatbotEngine:
         return None
 
     def get_default_response(self, message):
+        """Return default response when no intent is detected"""
         default_responses = [
             "I'm not sure I understand that question. Could you please rephrase it or choose from the options below?",
             "I'd like to help, but I need a bit more information. What specific issue are you facing?",
             "That's an interesting question! Let me suggest some common topics I can help with:",
+            "I want to make sure I give you the right help. Could you tell me more about what you're looking for?"
         ]
         
         return {
@@ -283,7 +329,8 @@ class ChatbotEngine:
                     {'title': '🔐 Login Help', 'payload': 'login_help'},
                     {'title': '🔑 Password Issues', 'payload': 'password_reset'},
                     {'title': '👤 Account Questions', 'payload': 'account_details'},
-                    {'title': '🙋 Call Helpline', 'payload': 'escalate'}
+                    {'title': '💳 Billing Help', 'payload': 'billing'},
+                    {'title': '🙋 Talk to Human', 'payload': 'escalate'}
                 ]
             }
         }
